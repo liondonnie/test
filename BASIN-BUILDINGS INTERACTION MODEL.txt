@@ -1,0 +1,877 @@
+finish
+/clear
+!/config,nproc,6
+/CONFIG,NRES,20000
+!!/config,nproc,6
+!!/cwd,'/home/yanlei/ansys files'
+!!/cwd,'D:\RAY\ansys files'
+!/cwd,'C:\ansys files'
+/prep7
+et,1,45,,,
+
+et,2,14,,,
+
+et,3,187,,
+
+wlg=1           !Dimensionless
+Ra=1000         !radius
+a=4*Ra
+xs1=1
+xs2=0.2
+b=a*xs1
+c=a*xs2             !*xs2*2.5
+H=c
+
+psb1=0.25
+psb2=0.3
+psb3=0.18
+psb4=0.18
+
+CS=1000
+CSV=400                                      
+CP=SQRT(2*(1-psb1)/(1-2*psb1))*CS
+CPV=SQRT(2*(1-psb2)/(1-2*psb2))*CSV
+
+wpoff=1.5*Ra/wlg
+R=sqrt(a**2+b**2+c**2)
+
+PI=acos(-1)
+ 
+WG1=10/wlg           !Grid size inside alluvial site
+WG2=50/wlg           !Grid size outside alluvial site
+WG3=7.5/wlg           !grid size of foundation
+
+
+!DAMPRATO1=0.01
+!damp1=DAMPRATO1/(acos(-1)*CRITFREQ)        
+!DAMPRATO2=0.03
+!damp2=DAMPRATO2/(acos(-1)*CRITFREQ)
+!DAMPRATO3=0.05
+!damp3=DAMPRATO3/(acos(-1)*CRITFREQ)
+!DAMPRATO4=0.05
+!damp4=DAMPRATO4/(acos(-1)*CRITFREQ)
+
+DENSITY=2200
+DENS2=2000
+DENS3=2500       
+DENS4=2500      
+
+G=DENSITY*CS*CS
+E=2*(1+psb1)*G
+GV=DENS2*CSV*CSV
+EV=2*(1+psb2)*GV
+
+!E/(2*(1+NU))
+!ALFA=E*(1-psb1)/(1+psb1)/(1-2*psb1)         !SQRT(ALFA/DENSITY)                             
+
+mp,ex,1,E
+mp,prxy,1,psb1
+mp,dens,1,DENSITY
+!MP,damp,1,damp1          !betd
+
+mp,ex,2,EV
+mp,prxy,2,psb2
+mp,dens,2,DENS2
+!MP,damp,2,damp2
+
+mp,ex,3,3e10
+mp,prxy,3,psb4
+mp,dens,3,dens3
+!mp,damp,4,damp4
+
+KBN=1.33*G/R      
+KBT=0.67*G/R       
+CBN=DENSITY*CP 
+CBT=DENSITY*CS 
+
+!*****************************Pretreatment-Site modeling***************************
+Block,0,a,0,b,0,c
+
+wpoffs,a/4+wg2
+wprota,,,90
+vsbw,all,all
+wpstyl,defa
+
+wpoffs,,b/4+wg2
+wprota,,90
+vsbw,all,all
+wpstyl,defa
+
+wpoffs,,,Ra*xs2+wg2
+wprota,90
+vsbw,all,all
+wpstyl,defa
+
+allsel
+cm,v1,volu
+
+csys,4
+sphere,Ra,,90
+vlscale,1,,,,xs1,xs2,,,1          
+
+vptn,all
+vdele,4
+allsel
+wpstyl,defa
+csys
+Vsel,s,area,,5
+Vatt,1   
+allsel     
+
+lsel,s,loc,z,0-0.000001,ra*xs2
+lsel,r,loc,x,0
+lsel,r,loc,y,0
+asll
+vsla
+cm,v,volu
+
+k,100,0,0,30
+k,101,a,0,30
+k,102,a,a,30
+k,103,0,a,30
+a,100,101,102,103
+!
+k,104,0,0,100
+k,105,a,0,100
+k,106,a,a,100
+k,107,0,a,100
+a,104,105,106,107
+!
+!k,108,0,0,200
+!k,109,3*Ra,0,200
+!k,110,3*Ra,3*Ra,200
+!k,111,0,3*Ra,200
+!a,108,109,110,111
+
+asel,s,loc,z,30
+asel,a,loc,z,100
+!asel,a,loc,z,200
+cm,asb,area
+
+allsel
+vsba,all,asb
+
+!aglue,all
+!*******************Pretreatment-foundation modeling**********************
+jch=7.5             
+jck=30             
+jcb=30             !longth
+jcdx=25            !space
+jcdy=25
+jcoff=(jcb+jcdx)   
+jcf=jcdx/2            
+jcn=13           
+
+offx=0
+offy=0
+offn=jcn
+
+offy=jcf
+wpoffs,offx,offy
+
+numstr,volu,50
+block,jcf,jcf+jcb,0,jck,0,jch
+vgen,jcn,50,,,jcoff
+!/pnum,volu,1
+
+*do,i,1,offn-1
+		offy=jcdy+jck
+    wpoffs,offx,offy
+		numstr,volu,50+jcn*i
+		block,jcf,jcf+jcb,0,jck,0,jch
+		vgen,jcn,50+jcn*i,,,jcoff    
+*enddo
+wpstyl,defa
+
+vsel,s,volu,,50,50+jcn*offn-1
+cm,vj,volu
+/pnum,volu,1
+allsel
+
+vsbv,2,vj
+
+offy=jcf
+wpoffs,offx,offy
+numstr,volu,50
+block,jcf,jcf+jcb,0,jck,0,jch
+vgen,jcn,50,,,jcoff
+!/pnum,volu,1
+
+*do,i,1,offn-1
+		offy=jcdy+jck
+    wpoffs,offx,offy
+		numstr,volu,50+jcn*i
+		block,jcf,jcf+jcb,0,jck,0,jch
+		vgen,jcn,50+jcn*i,,,jcoff    
+*enddo
+wpstyl,defa
+
+allsel
+nummrg,all
+
+vsel,s,volu,,50,50+jcn*offn-1
+vatt,3                   !foudation material mat,3
+aslv
+lsla
+cm,l1,line
+lesize,all,wg3           
+
+mshape,0,3d
+mshkey,0
+vsel,s,volu,,50,50+jcn*offn-1
+vsweep,all
+
+allsel
+!*****************Meshing************************
+
+lsel,s,loc,z,0-0.000001,ra*xs2
+lsel,r,loc,x,0
+lsel,r,loc,y,0
+asll
+vsla
+cm,v,volu
+vatt,2
+vsel,s,volu,,v
+vsel,a,volu,,22,24        !6      !              !26,29           !18,19
+cm,vvv,volu
+vsel,inve
+aslv
+lsla
+lesize,all,wg2
+vsweep,all
+
+
+vsel,s,volu,,v
+aslv
+lsla
+cm,lcj,line
+lesize,all,wg1
+lsel,s,loc,x,Ra,a/3+wg2
+lsel,r,loc,z,0
+lsel,r,loc,y,0
+cm,l10,line
+lsel,s,loc,y,Ra,b/3+wg2
+lsel,r,loc,z,0
+lsel,r,loc,x,0
+cm,l11,line
+lsel,s,loc,z,Ra*xs2,Ra*xs2+wg2
+lsel,r,loc,y,0
+lsel,r,loc,x,0
+cm,l12,line
+cmsel,s,l10,line
+cmsel,a,l11,line
+cmsel,a,l12,line
+cm,lall,line
+lesize,all,2*wg1
+vsel,s,volu,,v
+vsel,a,volu,,22,24          !6       !        !18,19
+type,3
+mshape,1,3d
+mshkey,0
+vmesh,all 
+
+!**********************Symmetric boundary constraints***********************************
+nsel,s,loc,y,0-0.00000001,0+0.00000001
+cm,ndbjz,node
+
+nsel,s,loc,x,0-0.00000001,0+0.00000001
+d,all,uy,0
+d,all,uz,0
+
+nsel,s,loc,y,0-0.00000001,0+0.00000001
+d,all,uy,0
+
+
+allsel
+*GET,nmax,node,,num,max
+nr=10          
+!********************Bottom artificial boundary normal(0,0,-1)***************************
+nsel,s,loc,z,H-0.00000001,H+0.00000001
+*get,n1,node,,count
+*dim,nn1,array,n1
+*get,nmin,node,,num,min
+nn1(1)=nmin
+*do,i,2,n1
+  *get,nnum,node,nmin,nxth
+  nmin=nnum
+  nn1(i)=nmin
+*enddo
+
+dxyz=wg3/wlg
+
+!法向
+*do,i,1,n1
+  nnum=nn1(i)
+  x=nx(nnum)
+  y=ny(nnum)
+  z=nz(nnum)
+  nmax1=nmax+i
+  n,nmax1,x,y,z+dxyz/2
+type,2
+nr=nr+1
+r,nr,KBN*ARNODE(nnum),CBN*ARNODE(nnum)
+real,nr
+e,nnum,nmax1
+d,nmax1,all,0
+
+nmax2=nmax+n1+i
+n,nmax2,x+dxyz/2,y,z
+type,2
+nr=nr+1
+r,nr,KBT*ARNODE(nnum),CBT*ARNODE(nnum)
+real,nr
+e,nnum,nmax2
+d,nmax2,all,0	
+nmax3=nmax+2*n1+i
+n,nmax3,x,y+dxyz/2,z
+type,2
+real,nr
+e,nnum,nmax3
+d,nmax3,all,0
+
+*enddo
+
+!*********************delete duplicate boundary points********************************
+NSEL,S,LOC,X,a-0.0000001,a+0.0000001
+nsel,r,loc,z,H-0.0000001,H+0.0000001
+cm,ndd,node  
+!********************artificial boundary on right side Normal(-1,0,0)******************
+nsel,s,loc,x,a-0.00000001,a+0.0000001
+nsel,r,loc,y,0-0.00000001,b+0.0000001
+nsel,r,loc,z,0-0.00000001,c+0.0000001
+!NSEL,R,LOC,z,0,c
+!nsel,r,loc,y,0
+cmsel,u,ndd,node
+*get,n2,node,,count
+*dim,nn2,array,n2
+*get,nmin,node,,num,min
+nn2(1)=nmin
+*do,i,2,n2
+  *get,nnum,node,nmin,nxth
+  nmin=nnum
+  nn2(i)=nmin
+*enddo
+
+dxyz=wg3/wlg
+
+!法向
+*do,i,1,n2
+  nnum=nn2(i)
+  x=nx(nnum)
+  y=ny(nnum)
+  z=nz(nnum)
+  nmax4=nmax+3*n1+i
+  n,nmax4,x+dxyz/2,y,z
+type,2
+nr=nr+1
+r,nr,KBN*ARNODE(nnum),CBN*ARNODE(nnum)
+real,nr
+e,nnum,nmax4
+d,nmax4,all,0
+
+nmax5=nmax+3*n1+n2+i
+n,nmax5,x,y+dxyz/2,z
+type,2
+nr=nr+1
+r,nr,KBT*ARNODE(nnum),CBT*ARNODE(nnum)
+real,nr
+e,nnum,nmax5
+d,nmax5,all,0	
+nmax6=nmax+3*n1+2*n2+i
+n,nmax6,x,y,z+dxyz/2
+type,2
+real,nr
+e,nnum,nmax6
+d,nmax6,all,0
+
+*enddo
+
+!*******************delete duplicate boundary points********************************
+NSEL,S,LOC,X,a-0.0000001,a+0.0000001
+nsel,r,loc,y,b-0.0000001,b+0.0000001
+cm,ndd1,node  
+nsel,s,loc,z,h-0.0000001,h+0.0000001
+nsel,r,loc,y,b-0.0000001,b+0.0000001
+cm,ndd2,node
+cmsel,s,ndd1,node
+cmsel,a,ndd2,node
+cm,ndd3,node
+!******************Back artificial boundary normal(0,-1,0)******************
+nsel,s,loc,y,b-0.00000001,b+0.0000001
+nsel,r,loc,x,0-0.00000001,a+0.0000001
+nsel,r,loc,z,0-0.00000001,c+0.0000001
+cmsel,u,ndd3,node
+*get,n3,node,,count
+*dim,nn3,array,n3
+*get,nmin,node,,num,min
+nn3(1)=nmin
+*do,i,2,n3
+  *get,nnum,node,nmin,nxth
+  nmin=nnum
+  nn3(i)=nmin
+*enddo
+
+dxyz=wg3/wlg
+
+!法向
+*do,i,1,n3
+  nnum=nn3(i)
+  x=nx(nnum)
+  y=ny(nnum)
+  z=nz(nnum)
+  nmax7=nmax+3*n1+3*n2+i
+  n,nmax7,x,y+dxyz/2,z
+type,2
+nr=nr+1
+r,nr,KBN*ARNODE(nnum),CBN*ARNODE(nnum)
+real,nr
+e,nnum,nmax7
+d,nmax7,all,0
+
+nmax8=nmax+3*n1+3*n2+n3+i
+n,nmax8,x+dxyz/2,y,z
+type,2
+nr=nr+1
+r,nr,KBT*ARNODE(nnum),CBT*ARNODE(nnum)
+real,nr
+e,nnum,nmax8
+d,nmax8,all,0	
+nmax9=nmax+3*n1+3*n2+2*n3+i
+n,nmax9,x,y,z+dxyz/2
+type,2
+real,nr
+e,nnum,nmax9
+d,nmax9,all,0
+
+*enddo
+
+SAVE
+
+allsel
+!nummrg,all
+!numcmp,all
+
+!*******************other parameters**********************
+fini
+/filename,cznbita2
+/prep7
+
+ita=2
+jcn=13
+offn=jcn
+FREQ=ita*CS/2/Ra
+CRITFREQ=2*pi*FREQ
+
+et,4,188   
+           
+jmcc=5.6
+SECTYPE, 1, BEAM, RECT, , 0   
+SECOFFSET, CENT 
+SECDATA,jmcc,jmcc,0,0,0,0,0,0,0,0,0,0 
+
+et,5,21,,,2     !mass element
+r,2,3.38e7
+
+!znb1=0.01
+!znb2=0.015
+!cfreq1=2*acos(-1)*0.0771           
+!cfreq2=CRITFREQ                   
+
+DAMPRATO1=0.02
+damp1=DAMPRATO1/(acos(-1)*CRITFREQ)         
+DAMPRATO2=0.03
+damp2=DAMPRATO2/(acos(-1)*CRITFREQ)
+DAMPRATO3=0.05
+damp3=DAMPRATO3/(acos(-1)*CRITFREQ)
+DAMPRATO4=0.05
+damp4=DAMPRATO4/(acos(-1)*CRITFREQ)
+DAMPRATO5=0.04
+damp5=DAMPRATO5/(acos(-1)*CRITFREQ)
+DAMPRATO6=0.03
+damp6=DAMPRATO6/(acos(-1)*CRITFREQ)
+DAMPRATO7=0.02
+damp7=DAMPRATO7/(acos(-1)*CRITFREQ)
+
+MP,betd,1,damp1            
+
+MP,betd,2,damp2                 
+
+!MP,betd,3,damp3
+
+mp,ex,4,3e10    
+mp,prxy,4,psb3
+!mp,betd,4,damp4     
+!************************Layered site*******************************
+dens5=1800
+CS5=200
+G5=dens5*CS5*CS5
+E5=2*(1+psb2)*G5
+mp,ex,5,E5
+mp,prxy,5,psb2
+mp,dens,5,dens5
+mp,betd,5,damp5
+
+dens6=1900
+CS6=380
+G6=dens6*CS6*CS6
+E6=2*(1+psb2)*G6
+mp,ex,6,E6
+mp,prxy,6,psb2
+mp,dens,6,dens6
+mp,betd,6,damp6
+
+dens7=2000
+CS7=600
+G7=dens7*CS7*CS7
+E7=2*(1+psb2)*G7
+mp,ex,7,E7
+mp,prxy,7,psb2
+mp,dens,7,dens7
+mp,betd,7,damp7
+
+vsel,s,volu,,219                     
+eslv
+!esel,r,mat,,3
+EMODIF,ALL,MAT,5
+
+vsel,s,volu,,4          
+eslv
+!esel,r,mat,,2
+EMODIF,ALL,MAT,6
+
+esel,s,mat,,3
+emodif,all,mat,5
+!
+!esel,s,mat,,2
+!emodif,all,mat,1
+
+vsel,s,volu,,1
+eslv
+!esel,r,mat,,2
+EMODIF,ALL,MAT,7
+
+/pnum,mat,1
+allsel
+eplot
+/num,1
+!**************************************************
+!!********************building modelling*********************
+jzh=64     
+jzch=3.2
+*get,k1,kp,,num,max
+type,4
+MAT,4
+secnum,1
+
+!first column
+wpoffs,jcf+jcb/2,jcf+jck/2
+csys,4
+*do,i,1,jch/wg3
+		njzjc1=node(0,0,jch-wg3*(i-1))
+		njzjc2=node(0,0,jch-wg3*i)
+		e,njzjc1,njzjc2
+*enddo
+k,k1+1,,,
+k,k1+2,,,-jzh
+lnum=10000
+numstr,line,lnum
+l,k1+1,k1+2
+lsel,s,line,,lnum
+lesize,all,jzh/40
+lmesh,all
+
+!add concreted-mass
+type,5
+real,2
+*do,i,1,jzh/jzch
+nmass=node(0,0,-jzch*i)
+e,nmass
+*enddo
+
+
+*do,j,1,jcn-1
+		type,4
+		MAT,4
+    wpoffs,jcoff,,
+    csys,4
+		*do,i,1,jch/wg3
+		    njzjc1=node(0,0,jch-wg3*(i-1))
+		    njzjc2=node(0,0,jch-wg3*i)
+		    e,njzjc1,njzjc2
+		*enddo
+		k,k1+2*j+1,,,
+		k,k1+2*j+2,,,-jzh
+		l,k1+2*j+1,k1+2*j+2
+		lsel,s,line,,lnum+j    
+		lesize,all,jzh/40
+		lmesh,all
+		
+		
+		type,5
+		real,2
+		*do,i,1,jzh/jzch
+		nmass=node(0,0,-jzch*i)
+		e,nmass
+		*enddo
+*enddo
+wpstyl,defa
+
+!second-last column	
+
+*do,kk,1,offn-1
+		*get,k1,kp,,num,max
+		type,4
+		MAT,4
+		secnum,1	
+		offy=(jcdy+jck)*kk+jcf+jck/2
+		offx=jcf+jcb/2
+		wpoffs,offx,offy		
+		*do,i,1,jch/wg3
+				njzjc1=node(0,0,jch-wg3*(i-1))
+				njzjc2=node(0,0,jch-wg3*i)
+				e,njzjc1,njzjc2
+		*enddo
+		k,k1+1,,,
+		k,k1+2,,,-jzh
+		lnum=10000+100*kk
+		numstr,line,lnum
+		l,k1+1,k1+2
+		lsel,s,line,,lnum
+		lesize,all,jzh/40
+		lmesh,all
+
+		
+		type,5
+		real,2
+		*do,i,1,jzh/jzch
+		nmass=node(0,0,-jzch*i)
+		e,nmass
+		*enddo
+
+
+		*do,j,1,jcn-1
+				type,4
+				MAT,4
+		    wpoffs,jcoff,,
+		    csys,4
+				*do,i,1,jch/wg3
+				    njzjc1=node(0,0,jch-wg3*(i-1))
+				    njzjc2=node(0,0,jch-wg3*i)
+				    e,njzjc1,njzjc2
+				*enddo
+				k,k1+2*j+1,,,
+				k,k1+2*j+2,,,-jzh
+				l,k1+2*j+1,k1+2*j+2
+				lsel,s,line,,lnum+j     
+				lesize,all,jzh/40
+				lmesh,all
+				
+				
+				type,5
+				real,2
+				*do,i,1,jzh/jzch
+				nmass=node(0,0,-jzch*i)
+				e,nmass
+				*enddo
+		*enddo
+		wpstyl,defa
+*enddo
+
+wpstyl,defa       
+csys
+
+
+allsel
+nummrg,all
+numcmp,all
+
+!*********************solution*******************************************
+allsel
+/solu
+
+K=2*pi*FREQ/CS         
+ALLSEL
+antype,3
+hropt,full
+!alphad,5
+
+!*****************Equivalent load at bottom**************************************** 
+
+*DO,I,1,N1
+  nnum=nn1(I)
+  z0=nz(nnum)
+!  y0=H-y0
+
+S=2*COS(K*z0)             
+V1=2*CRITFREQ*COS(k*z0)    
+V2=(-1)*2*CRITFREQ*SIN(k*z0)
+F,NNUM,FX,(KBT*S+DENSITY*CS*V2)*ARNODE(NNUM),CBT*V1*ARNODE(NNUM)
+
+*ENDDO
+
+
+!*****equivalent nodal load on the right******************************************
+*DO,I,1,N2
+   nnum=nn2(I)
+   z0=nz(nnum)
+!   y0=H-y0
+
+S=2*COS(K*z0)             
+V1=2*CRITFREQ*COS(k*z0)    
+V2=(-1)*2*CRITFREQ*SIN(k*z0)
+F,NNUM,FX,KBN*S*ARNODE(NNUM),CBN*V1*ARNODE(NNUM)
+F,NNUM,FZ,DENSITY*CS*V2*ARNODE(NNUM)
+
+*ENDDO
+
+
+!******equivalent nodal load on the back*******************************************
+*DO,I,1,N3
+   nnum=nn3(I)
+   z0=nz(nnum)
+!   y0=H-y0
+
+S=2*COS(K*z0)              
+V1=2*CRITFREQ*COS(k*z0)    
+V2=(-1)*2*CRITFREQ*SIN(k*z0)
+F,NNUM,FX,KBT*S*ARNODE(NNUM),CBT*V1*ARNODE(NNUM)
+
+*ENDDO
+!*************************************************************************
+
+/PBC,ALL, ,0
+allsel 
+HARFRQ,FREQ,FREQ
+NSUBST,1
+
+allsel
+outres,all,none
+outres,nsol,all,
+allsel 
+
+SOLVE
+save
+
+
+!***************************Post treatment**********************************************
+fini
+/gformat,f,12,1
+/post1
+!**************xy plane*************
+nsel,s,loc,x,0-0.00000001,2*Ra+0.000000001
+nsel,r,loc,y,0-0.00000001,2*Ra+0.000000001
+nsel,r,loc,z,0-0.00000001,0+0.000000001
+esln
+cm,edbxy,elem
+
+!**************Three dimensional results***********
+nsel,s,loc,x,0,2*Ra
+nsel,r,loc,y,0,2*Ra
+nsel,r,loc,z,0,2*Ra
+esln
+cm,epl,elem
+
+allsel
+set,first
+/DSCALE,ALL,off 
+Etable,xy,U,x
+SABS,1
+sadd,planexy,xy,,,,
+cmsel,s,epl,elem
+PLETAB,planexy,AVG
+/dev,font,1,Times*New*Roman,400,0,-27,0,0,,,
+/UDOC,1,CNTR,right
+/view,1,,,-1
+/ANG,1  
+/REP,FAST
+/EDGE,1,0,180
+/SHOW,win32c
+/contour,1,9,0,,2.1
+!/contour,1,64,0,,3
+/replot
+/PLOPTS,MINM,0 
+/AUTO,1 
+/REP,FAST  
+/EXPAND,4,POLAR,HALF,,90
+/REPLOT 
+/PLOPTS,INFO,3  
+/PLOPTS,LEG1,0  
+/PLOPTS,LEG2,0  
+/PLOPTS,LEG3,1  
+/PLOPTS,FRAME,0 
+/UDOC,1,DATE,0
+/TRIAD,OFF 
+/UI,WPSE,1
+/ZOOM,1,RECT,0.935995,0.803944 ,-0.928159744505 ,-0.801508084251
+/RGB,INDEX,100,100,100, 0   
+/RGB,INDEX, 80, 80, 80,13   
+/RGB,INDEX, 60, 60, 60,14   
+/RGB,INDEX, 0, 0, 0,15  
+/REPLOT 
+
+!******************xy plane****************
+cmsel,s,edbxy,elem
+/replot
+!**********************************************
+
+!******************xz plane****************
+cswpla,11,1,0.5
+wprota,90
+nsel,s,loc,x,0-0.0000001,Ra+0.00000001
+csys
+nsel,r,loc,y,0-0.00000001,0+0.00000001
+esln
+esel,r,mat,,2
+wpstyl,defa
+cm,edbxz,elem
+
+!PLETAB,planexy,AVG
+!/UDOC,1,CNTR,right
+!/view,1,,,-1
+!/EDGE,1,0,45
+!/SHOW,win32c
+!/contour,1,9,auto
+!!/contour,1,64,0,,21.0
+!/replot
+!/PLOPTS,MINM,0 
+!/AUTO,1 
+!/REP,FAST  
+!**********************************************
+
+!******************yz plane****************
+cswpla,11,1,0.5
+wprota,,90
+nsel,s,loc,y,0-0.0000001,Ra+0.00000001
+csys
+nsel,r,loc,x,0-0.00000001,0+0.00000001
+esln
+esel,r,mat,,2
+wpstyl,defa
+cm,edbyz,elem
+
+!PLETAB,planexy,AVG
+!/UDOC,1,CNTR,right
+!/view,1,,,-1
+!/EDGE,1,0,45
+!/SHOW,win32c
+!/contour,1,64,auto
+!!/contour,1,64,0,,21.0
+!/replot
+!/PLOPTS,MINM,0 
+!/AUTO,1 
+!/REP,FAST 
+
+
+*dim,nd,array,99
+*dim,ndx,array,99
+*do,i,1,99
+nd(i)=node((i-1)*10,0,0)
+ndx(i)=nx(nd(i))
+*enddo
+
+/post26
+numvar,100  
+*do,i,1,99
+nsol,i+1,nd(i),u,x,ux
+*enddo
+finish
